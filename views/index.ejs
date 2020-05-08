@@ -146,78 +146,12 @@
           </li>
         </ul>
       </nav>
-      <div class="main-sidebar" tabindex="1" style="overflow: hidden; outline: none;">
-        <aside id="sidebar-wrapper">
-          <div class="sidebar-brand">
-            <a href="">Stisla Lite</a>
-          </div>
-          <div class="sidebar-user">
-            <div class="sidebar-user-picture">
-              <img alt="image" src="./image/avatar-1.jpeg">
-            </div>
-            <div class="sidebar-user-details">
-
-              <!-- username -->
-              <div class="user-name">username</div>
-              <!-- 上一次登录的时间 -->
-              <div class="user-role">
-                <%= new Date(adminData.lastLoginTime).toLocaleString() %>
-              </div>
-            </div>
-          </div>
-          <ul class="sidebar-menu">
-            <li class="active">
-              <a href="">
-                <i class="ion ion-speedometer"></i>
-                <span>学生管理</span>
-              </a>
-            </li>
-            <li>
-              <a href="">
-                <i class="ion ion-clipboard"></i>
-                <span>增加学生</span>
-              </a>
-            </li>
-            <li>
-              <a href="">
-                <i class="ion ion-ios-albums-outline"></i>
-                <span>管理员管理</span>
-              </a>
-            </li>
-            <li>
-              <a href="">
-                <i class="ion ion-flag"></i>
-                <span>增加管理员</span>
-              </a>
-            </li>
-
-            <!-- <li>
-              <a href="">
-                <i class="ion ion-stats-bars"></i>
-                <span>退出登录</span>
-              </a>
-            </li> -->
-            <!-- <li>
-              <a href="">
-                <i class="ion ion-ios-location-outline"></i>
-                <span>Google Maps</span>
-              </a>
-            </li> -->
-
-
-          </ul>
-          <div class="p-3 mt-4 mb-4">
-            <a href="" class="btn btn-danger btn-shadow btn-round has-icon has-icon-nofloat btn-block">
-              <i class="ion ion-help-buoy"></i>
-              <div>退出登录</div>
-            </a>
-          </div>
-        </aside>
-      </div>
+      <%- include('./header.ejs',{idx:'index'}) %>
       <div class="main-content" style="min-height: 868px;">
         <section class="section">
           <h1 class="section-header">
             <div>学生管理</div>
+            <button class="btn  btn-success exportExcel" style="float: right;">导出为Excel</button>
           </h1>
           <table class="table">
             <caption>学员列表</caption>
@@ -244,14 +178,7 @@
 
         </section>
       </div>
-      <footer class="main-footer">
-        <div class="footer-left">
-          Copyright © 2018 <div class="bullet"></div> More Templates <a href="http://www.cssmoban.com/" target="_blank"
-            title="模板之家">模板之家</a> - Collect from <a href="http://www.cssmoban.com/" title="网页模板"
-            target="_blank">网页模板</a>
-        </div>
-        <div class="footer-right"></div>
-      </footer>
+      <%- include('./footer.ejs') %>
     </div>
   </div>
   <script src="./js/jquery.min.js"></script>
@@ -275,33 +202,45 @@
     }
     StudentList.prototype.renderDom = function (data) {
       let _this = this;
-      $('#list').empty()
-      $.each(data.data, (idx, item) => {
-        let tr = $("<tr></tr>")
-        tr.html(`
-                <td>${item.sid}</td>
-                <td contenteditable="true">${item.name}</td>
-                <td contenteditable="true">${item.sex}</td>
-                <td contenteditable="true">${item.age}</td>
-                <td>
-                  <input type="button"  value='删除' class="btn btn-warning del" data-id="${item.sid}">
-                  <input type="button" value='修改' class="btn btn-info change" data-id="${item.sid}">
-                </td>
-        `).appendTo($('#list')[0])
-      })
-      //渲染分页
-      pagination.init({
-        // showData:1,
-        wrapid: 'wrap', //页面显示分页器ID
-        total: data.count, //总数据条数
-        pagesize: 4, //每页3条数据
-        currentPage: _this.page, //当前页
-        onPagechange: function (n) {
-          //页面改变时触发， 参数 n 为改变后的当前页数
-          _this.page = n
-          _this.init()
+      // console.log(data.data);
+      if(data.data.length > 0){
+        $('#list').empty()
+        $.each(data.data, (idx, item) => {
+          let tr = $("<tr></tr>")
+          tr.html(`
+                  <td>${item.sid}</td>
+                  <td contenteditable="true">${item.name}</td>
+                  <td contenteditable="true">${item.sex}</td>
+                  <td contenteditable="true">${item.age}</td>
+                  <td>
+                    <input type="button"  value='删除' class="btn btn-warning del" data-id="${item.sid}">
+                    <input type="button" value='修改' class="btn btn-info change" data-id="${item.sid}">
+                  </td>
+          `).appendTo($('#list')[0])
+        })
+        //渲染分页
+        pagination.init({
+          // showData:1,
+          wrapid: 'wrap', //页面显示分页器ID
+          total: data.count, //总数据条数
+          pagesize: 4, //每页3条数据
+          currentPage: _this.page, //当前页
+          onPagechange: function (n) {
+            //页面改变时触发， 参数 n 为改变后的当前页数
+            _this.page = n
+            _this.init()
+          }
+        })
+      } else {
+        //本页数据为0
+        if( _this.page > 1 ){
+          _this.page -= 1;
+          _this.init();
+        }else{
+          $('#wrap').empty();
+          $('.studentList').html('暂无数据');
         }
-      })
+      }
     }
 
     StudentList.prototype.bindEvent = function () {
@@ -322,14 +261,30 @@
           return
         }
 
-        console.log(sid, uname, sex, age)
+        // console.log(sid, uname, sex, age)
         $.post('/student/' + sid, { uname, sex, age }, (res) => {
-          console.log(res)
+          // console.log(res)
           if (res.error) { //修改成功
             alert("修改成功")
             return
           }
           alert('修改失败')
+        })
+      })
+
+      //删除学生信息：
+      $('.studentList').delegate('.del','click',function (){
+        var _confirm = confirm('是否确认删除？');
+        if( !_confirm ) return;
+
+        var sid = $(this).attr('data-id');
+        $.ajax({
+          url:"/student/"+sid,
+          type:"delete",
+          success (res){
+            console.log(res);
+            _this.init();
+          }
         })
       })
 
@@ -344,6 +299,18 @@
         _this.searchData.data && _this.renderDom(_this.searchData);
       })
 
+      //导出为excel表 格式为xlsx
+      $('.exportExcel').on('click',function (){
+        var _confirm = confirm('确定导出所有学生数据');
+        if( !_confirm ) return;
+        $.get('/student/exportExcel',function (res){
+          // console.log(res.error);
+          if(res.error){
+            // console.log(window.location+'excel/'+res.msg);
+            window.location = window.location+'excel/'+res.msg;
+          }
+        })
+      })
 
     }
     StudentList.prototype.searchStudent = function () {
